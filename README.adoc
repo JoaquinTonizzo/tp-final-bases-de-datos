@@ -1,0 +1,240 @@
+= Bases de Datos 1: Trabajo Práctico Final
+
+- Alumnos:
+	* Augusto Fuentes <augustofuentes11@gmail.com>;
+	* Luna Maria <luna22012001@gmail.com>; 
+	* Lucas Joel Quintana <lucasjoelquintana@gmail.com>;
+	* Joaquin Gabriel Tonizzo <joaquintonizzo1@gmail.com>;
+
+Docentes: Daniel Bertaccini y Hernan Rondelli (COM-02)
+
+:title-page: Trabajo Práctico Final
+:numbered:
+:source-highlighter: coderay
+:tabsize: 4
+
+== Introducción
+
+El presente trabajo práctico tiene como objetivo desarrollar un sistema de gestión 
+de inscripciones para la carrera de Tecnicatura Universitaria en Informática de la UNGS. 
+
+El sistema deberá cumplir con los siguientes requisitos:
+
+- Funcionalidades:
+	* Apertura de períodos de inscripción.
+	* Cierre de períodos de inscripción.
+	* Alta de inscripciones a materias.
+	* Baja de inscripciones a materias.
+	* Aplicación de cupos.
+	* Ingreso de notas de cursada.
+	* Cierre de cursadas.
+	* Generar emails para notificar eventos importantes a los alumnes.
+
+Modelo de datos:
+
+- El sistema se basará en un modelo de datos relacional, compuesto por las siguientes tablas:
+	* alumne: Almacena información sobre los alumnes, como identificador, nombre, apellido, DNI, fecha de nacimiento, teléfono y email.
+	* materia: Almacena información sobre las materias, como nombre e identificador.
+	* correlatividad: Almacena las correlatividades entre materias.
+	* comision: Almacena información sobre las comisiones de cada materia, como identificador, cupo.
+	* cursada: Almacena información sobre las inscripciones a materias, incluyendo el identificador del alumne, el identificador de la materia y comision, el estado de la inscripción (ingresade, aceptade, en espera, dade de baja), la nota de cursada (si corresponde) y la fecha de inscripción.
+	* periodo: Almacena información sobre los períodos de inscripción, incluyendo el año, el número de semestre y el estado (inscripcion, cierre inscrip, cursada, cerrado).
+	* historia_academica: Almacena el historial académico de les alumnes, incluyendo el semestre, la materia, la comisión, el estado de la materia (ausente, reprobada, regular, aprobada), la nota de regularidad (si corresponde) y la nota final (si corresponde).
+	* error: Almacena información sobre los errores que se produzcan en el sistema, incluyendo el identificador del error, la operación que lo generó, el semestre, el id del alumne, el id de la materia, el id de la comisión, la fecha y hora del error y el motivo del error.
+	* envio_email: Almacena información sobre los emails que se enviarían a les alumnes, incluyendo el identificador del email, la fecha y hora de generación, la dirección de email del alumne, el asunto del email, el cuerpo del email, la fecha y hora de envío y el estado del envío (pendiente, enviado).
+
+Pruebas:
+
+Para probar el sistema de gestión de inscripciones, se utilizará un conjunto de datos 
+de entrada provisto en el archivo entradas_trx.json. Este archivo contiene una serie de 
+transacciones que representan diferentes operaciones que se pueden realizar en el sistema. 
+
+Implementación:
+
+- El sistema se implementará utilizando las siguientes tecnologías:
+	* Base de datos relacional: PostgreSQL
+	* Lenguaje de programación: Go
+	* Todo el código SQL escrito para este trabajo práctico, deberá poder ejecutarse desde una aplicación CLI escrita en Go.
+
+NoSQL:
+
+Por último, para poder comparar el modelo relacional con un modelo no relacional NoSQL, se
+pide guardar los datos de alumnes, materias, comisiones e inscripciones a cursada (al menos de
+dos materias, mínimo de tres alumnes por comisión) en una base de datos NoSQL basada en
+JSON. Para ello, utilizar la base de datos BoltDB. Este código también deberá ejecutarse desde
+una aplicación CLI escrita en Go.
+
+== Descripción
+
+Dificultades y Soluciones:
+
+Durante el desarrollo del trabajo práctico, nos enfrentamos a dificultades que requerían 
+una comprensión profunda de las tecnologías que estábamos utilizando. Ante cada una de ellas, 
+recurrimos a la documentación oficial de Go, PostgreSQL, BoltDB y otras fuentes relevantes. 
+Las áreas que presentaron mayor dificultad fueron la implementación de la lógica para la aplicación de cupos 
+y el cierre de cursada, donde entender claramente las especificaciones y requerimientos de la consigna 
+fue importante para alcanzar soluciones efectivas.
+
+Decisiones de Diseño:
+
+Una de las decisiones más importantes que tomamos fue la de dividir la lógica del sistema en distintos archivos, 
+cada uno centrado en una tarea específica. Esto facilitó la ejecución y mantenimiento del código SQL desde nuestra 
+interfaz de línea de comandos (CLI) en Go, asegurando una organización clara. Creamos archivos SQL individuales 
+para la creación de tablas, la adición y eliminación de constraints, la carga inicial de datos en todas las tablas, 
+así como para la implementación de los stored procedures y triggers necesarios.
+
+Pruebas y Validación del Sistema:
+
+Implementamos un conjunto de pruebas utilizando la tabla entrada_trx 
+para ejecutar transacciones y verificar el correcto funcionamiento de todas las operaciones del sistema. 
+Este enfoque nos permitió detectar y corregir errores, asegurando que todas las funcionalidades cumplieran 
+con los requisitos especificados en la consigna.
+
+La funcion 'ejecutarTesteo' de la CLI SQL es responsable de ejecutar una serie de pruebas almacenadas en la tabla 'entrada_trx'. A continuacion 
+se detalla el funcionamiento de la misma.
+
+- 1. Consulta y recorrido de datos:
+	* La funcion realiza una consulta a la tabla 'entrada_trx' para obtener todas las transacciones ordenadas de forma ascendete segun su 'ID_orden'.
+	* Recorre los resultados de la consulta, leyendo cada fila y almacenando los datos en una estructura 'entrada_trx'.
+
+- 2. Procesamiento de transacciones
+	* Dependiendo del valor de la columna 'operacion', se ejecutan diferentes operaciones en la base de datos.
+	* Las operaciones incluyen apertura de inscripciones, alta y baja de inscripciones, cierre de inscripciones, aplicacion de cupos, ingreso de notas y cierre de cursadas.
+
+- 3. Manejo de transacciones
+	* Cada operacion se realiza dentro de una transaccion.
+	* Si ocurre un error  durante la ejecucion de la transaccion, la transaccion se revierte (Rollback).
+	* Si la operacion se ejecuta con exito, la transaccion se confirma (Commit).
+
+- 4. Manejo de errores
+	* Si ocurre un error en cualquier parte del proceso, la funcion lo retorna para que pueda ser manejado externamente y asi retornar un mensaje de error en caso de ser necesario.
+
+Niveles de aislamiento:
+
+Para las transacciones cierre de cursada y aplicacion de cupos, optamos por elegir el nivel de aislamiento serializable, ya que asegura la consistencia de la transaccion 
+evitando problemas como lecturas sucias, no repetibles o fantasmas. En estas transacciones tenemos operaciones de escritura y lectura complejas, como la actualizacion 
+de tablas basadas en datos de otras tablas, por lo tanto estas operaciones requieren un nivel de aislamiento que garantice que las operaciones de lectura y escritura 
+se realicen de manera coherente sin interferencias de otras transacciones concurrentes y el adecuado es el nivel de aislamiento serializable.
+
+Para las otras transacciones el nivel de aislamiento read committed es adecuado, ya que las operaciones no involucran
+condiciones de concurrencia criticas, es decir, no involucran situaciones donde varias transacciones concurrentes podrian modificar los mismos datos al mismo tiempo 
+por lo que no se requiere de un nivel mas alto de aislamiento.
+
+La CLI SQL que desarrollamos en Go está diseñada para interactuar con el sistema de gestión de bases de datos PostgreSQL.
+
+- Estas son las opciones que ofrece para administrar y manipular la base de datos relacional:
+	* Crear Base de Datos: Crea la base de datos, si existe la elimina y crea una nueva.
+	* Creación de Tablas: Esta opción permite ejecutar un archivo SQL que define la estructura de todas las tablas necesarias para el sistema.
+	* Creación de Constraints: Se ejecuta un archivo SQL que agrega las claves primarias (PK) y claves foráneas (FK) a las tablas ya creadas.
+	* Eliminación de Constraints: Se ejecuta un archivo SQL que elimina las constraints definidas previamente.
+	* Carga de Datos: Permite insertar los datos de prueba enviados en archivos json junto a la consigna en las tablas correspondientes utilizando archivos SQL preparados previamente.
+	* Guardar Stored Procedures y Triggers: Se ejecutan archivos SQL que definen todos los stored procedures y triggers requeridos por el sistema.
+	* Ejecución de Tests: Se ejecutan las transacciones de prueba necesarias, cuyos parámetros son leídos de la tabla entrada_trx.
+	* Salir: Opción para salir de la interfaz de línea de comandos y terminar la interacción con la base de datos.
+
+La CLI NoSQL está diseñada específicamente para interactuar con la base de datos BoltDB. 
+
+- Estas son las opciones para gestionar datos:
+	* Crear Base de Datos: Crea una nueva base de datos BoltDB, si existe la elimina y crea una nueva.
+	* Crear Buckets: Permite definir buckets dentro de la base de datos BoltDB, que actúan como contenedores lógicos para organizar y almacenar datos.
+	* Guardar Alumnes: Inserta datos de alumnes en el bucket correspondiente de la base de datos BoltDB. 
+	* Guardar Materias: Inserta datos de materias en el bucket correspondiente de la base de datos BoltDB. 
+	* Guardar Comisiones: Inserta datos de comisiones en el bucket correspondiente de la base de datos BoltDB. 
+	* Guardar Inscripciones: Permite registrar inscripciones a cursadas en el bucket de la base de datos BoltDB.
+	* Salir: Opción para salir de la interfaz de línea de comandos y terminar la interacción con la base de datos BoltDB.
+
+== Implementación
+
+La estructura del proyecto se organiza de la siguiente manera:
+
+[source,plaintext]
+----
+.
+├── README.adoc
+├── cli_no_sql.go
+├── cli_sql.go
+├── go.mod
+├── go.sum
+└── sql
+	├── agregar_alumnes.sql
+	├── agregar_comisiones.sql
+	├── agregar_correlatividades.sql
+	├── agregar_entradas_trx.sql
+	├── agregar_historias_academicas.sql
+	├── agregar_keys.sql
+	├── agregar_materias.sql
+	├── agregar_periodos.sql
+	├── apertura_inscripcion.sql
+	├── aplicacion_de_cupos.sql
+	├── baja_inscripcion.sql
+	├── cierre_cursada.sql
+	├── cierre_inscripcion.sql
+	├── crear_database.sql
+	├── crear_tablas.sql
+	├── eliminar_keys.sql
+	├── envio_emails.sql
+	├── ingreso_nota_cursada.sql
+	├── inscripcion_materia.sql
+	├── testeo.sql
+----
+
+- Archivos y Directorios:
+	* README.adoc: Informe del Trabajo Práctico en formato AsciiDoc.
+	* cli_no_sql.go: Código fuente de la CLI para operaciones NoSQL.
+	* cli_sql.go: Código fuente de la CLI para operaciones SQL.
+	* go.mod: Archivo que define el módulo y las dependencias del proyecto en Go.
+	* go.sum: Archivo que verifica las versiones de las dependencias del proyecto en Go.
+
+- Directorio sql:
+	* agregar_alumnes.sql: Contiene las consultas SQL necesarias para agregar los datos de alumnos a la base de datos.
+	* agregar_comisiones.sql: Contiene las consultas SQL necesarias para agregar los datos de comisiones.
+	* agregar_correlatividades.sql: Contiene las consultas SQL necesarias para agregar las correlatividades entre materias.
+	* agregar_entradas_trx.sql: Contiene las consultas SQL necesarias para agregar las entradas de transacciones para pruebas.
+	* agregar_historias_academicas.sql: Contiene las consultas SQL necesarias para agregar historias académicas.
+	* agregar_keys.sql: Contiene las consultas SQL necesarias para agregar constraints (claves primarias y foráneas).
+	* agregar_materias.sql: Contiene las consultas SQL necesarias para agregar los datos de materias.
+	* agregar_periodos.sql: Contiene las consultas SQL necesarias para agregar los datos de periodos.
+	* apertura_inscripcion.sql: Stored procedure para la apertura de inscripciones.
+	* aplicacion_de_cupos.sql: Stored procedure para la aplicación de cupos.
+	* baja_inscripcion.sql: Stored procedure para gestionar la baja de inscripciones.
+	* cierre_cursada.sql: Stored procedure para el cierre de cursadas.
+	* cierre_inscripcion.sql: Stored procedure para el cierre de inscripciones.
+	* crear_database.sql: Contiene las consultas SQL necesarias para la creación de la base de datos. Esto nos sirvio durante el desarrollo del proyecto
+				  para las pruebas. Sin embargo, en la version final del proyecto, la base de datos es creada desde una funcion en GO. 
+	* crear_tablas.sql: Contiene las consultas SQL necesarias para la creación de tablas en la base de datos.
+	* eliminar_keys.sql: Contiene las consultas SQL necesarias para eliminar constraints (claves primarias y foráneas).
+	* envio_emails.sql: Triggers para insertar datos en la tabla envio_email cuando corresponda.
+	* ingreso_nota_cursada.sql: Stored procedure para el ingreso de notas de cursada.
+	* inscripcion_materia.sql: Stored procedure para la inscripción a materias.
+	* testeo.sql: Stored procedure que ejecuta todas las transacciones de la tabla entrada_trx para pruebas. Esto nos sirvio durante el desarrollo del proyecto
+				  para las pruebas. Sin embargo, en la version final del proyecto, las transacciones de prueba se ejecutan desde una funcion en GO. 
+
+Estos archivos contienen la lógica necesaria para la creación y manipulación de la base de datos, así como para 
+la realización de pruebas y validaciones del sistema. Para evitar redundancias y extender innecesariamente el documento, 
+el código de estos archivos no se incluye en este informe.
+
+== Conclusiones
+
+Resultados Obtenidos:
+
+Durante el proceso de desarrollo de este trabajo práctico, nos enfrentamos a muchas dificultas que nos permitieron 
+aplicar los conocimientos adquiridos la cursada de la materia. Gracias a esto, logramos implementar de manera 
+efectiva todas funcionalidades especificadas en las consignas del trabajo práctico, asegurando la consistencia de 
+la información en todo momento. Además, creamos dos CLI en Go: una para operaciones SQL que incluye creación de bases de datos, 
+tablas, cargas de datos y pruebas, y otra para operaciones NoSQL que maneja una base de datos que gestiona de datos de alumnos, 
+materias, comisiones e inscripciones.
+
+Las pruebas realizadas con la tabla entrada_trx fueron fundamentales para verificar el correcto funcionamiento de las operaciones 
+principales del sistema. Estas pruebas nos permitieron identificar problemas y corregir el código antes de la entrega final.
+
+Lecciones Aprendidas:
+
+Aprendimos la importancia de consultar la documentación detalladamente para resolver dudas técnicas y tomar decisiones informadas. 
+La familiarización con la documentación de PostgreSQL, Go y BoltDB fue fundamental para implementar correctamente las funcionalidades requeridas.
+Además, la experiencia de trabajar con diferentes tipos de bases de datos y desarrollar aplicaciones CLI en Go amplió nuestro conocimiento 
+sobre el manejo de datos y la implementación de interfaces de usuario simples pero efectivas.
+
+Conclusión Final:
+
+En conclusión, este trabajo práctico no solo nos permitió aplicar los conocimientos teóricos adquiridos durante la cursada de la materia, 
+sino que también nos desafió a enfrentar problemas reales de diseño, implementación y prueba de sistemas de gestión de bases de datos. 
