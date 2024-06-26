@@ -33,6 +33,6 @@ Implementación de almacenamiento NoSQL utilizando BoltDB para datos de inscripc
 
 == Contacto
 
-Para más información, puedes contactar a [joaquintonizzo1@gmail.com](mailto:joaquintonizzo1@gmail.com).
+Para más información, puedes contactar a joaquintonizzo1@gmail.com.
 
 ¡Gracias por tu interés!
